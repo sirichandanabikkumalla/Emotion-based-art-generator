@@ -1,0 +1,17 @@
+emotionbasedartgenerator/
+│
+├── app.py
+├── requirements.txt
+├── runtime.txt
+├── templates/
+│   └── index.html
+└── static/
+    └── art/
+        ├── happy.png
+        ├── sad.png
+        ├── angry.png
+        ├── fear.png
+        ├── love.png
+        ├── surprise.png
+        ├── disgust.png
+        └── calm.png

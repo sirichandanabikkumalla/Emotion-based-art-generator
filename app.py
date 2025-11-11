@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+CORS(app)
 import os
 from dotenv import load_dotenv
 import traceback
@@ -96,3 +98,4 @@ if __name__ == "__main__":
     # Use host=0.0.0.0 if you want the app to be reachable from other devices on the network
     # Leave debug=True for development (shows useful tracebacks in terminal)
     app.run(debug=True, host="0.0.0.0", port=5000)
+

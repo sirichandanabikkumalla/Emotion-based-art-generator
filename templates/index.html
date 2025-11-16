@@ -1,99 +1,122 @@
-from flask import Flask, request, jsonify, render_template
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from transformers import pipeline
-import os
-from dotenv import load_dotenv
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotion-Based Art Generator</title>
 
-load_dotenv()
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-app = Flask(__name__)
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.15);
+      width: 400px;
+      text-align: center;
+    }
 
-# ---------- DATABASE ----------
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "supersecretkey")
+    h1 {
+      font-size: 26px;
+      margin-bottom: 20px;
+      color: #333;
+    }
 
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
+    input {
+      width: 90%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      margin-bottom: 10px;
+    }
 
-# ---------- USER MODEL ----------
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
+    button {
+      padding: 12px 20px;
+      background: #0078ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
 
-with app.app_context():
-    db.create_all()
+    button:hover {
+      background: #005fcc;
+    }
 
-# ---------- AUTH ROUTES ----------
-@app.route("/signup", methods=["POST"])
-def signup():
-    data = request.json
-    email = data.get("email")
-    password = data.get("password")
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #444;
+      font-weight: bold;
+    }
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "Email already exists"}), 409
+    #art {
+      margin-top: 20px;
+      display: none;
+      width: 280px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
 
-    hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
-    user = User(email=email, password=hashed_pw)
-    db.session.add(user)
-    db.session.commit()
+  <div class="container">
+    <h1>Emotion Art Generator 🎨</h1>
 
-    return jsonify({"message": "Account created successfully"})
+    <input id="textInput" type="text" placeholder="Type something..." />
 
+    <button onclick="analyze()">Analyze Emotion</button>
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.json
-    email = data.get("email")
-    password = data.get("password")
+    <div id="result"></div>
+    <img id="art" src="" alt="Generated Art" />
+  </div>
 
-    user = User.query.filter_by(email=email).first()
+  <script>
+    async function analyze() {
+      const text = document.getElementById("textInput").value;
+      const token = localStorage.getItem("token");
 
-    if not user or not bcrypt.check_password_hash(user.password, password):
-        return jsonify({"error": "Invalid email or password"}), 401
+      if (!token) {
+        alert("You must login first. No token found.");
+        return;
+      }
 
-    token = create_access_token(identity=user.id)
+      const response = await fetch("/analyze_text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ text })
+      });
 
-    return jsonify({"token": token, "message": "Login successful"})
+      const data = await response.json();
 
+      if (data.error) {
+        document.getElementById("result").innerText = data.error;
+        return;
+      }
 
-# ---------- EMOTION DETECTION ----------
-emotion_model = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base")
-emotion_art = {
-    "happy": "happy.jpg",
-    "sadness": "sad.jpg",
-    "anger": "angry.jpg",
-    "fear": "fear.jpg",
-    "love": "love.jpg",
-    "surprise": "surprise.jpg",
-    "disgust": "disgust.jpg",
-    "neutral": "calm.jpg"
-}
+      document.getElementById("result").innerText =
+        "Detected Emotion: " + data.emotion.toUpperCase();
 
-@app.route("/analyze_text", methods=["POST"])
-@jwt_required()    # 🔒 Protected Route
-def analyze_text():
-    data = request.json
-    text = data.get("text", "")
-
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
-
-    result = emotion_model(text)[0]
-    emotion = result["label"].lower()
-
-    art_file = emotion_art.get(emotion, "calm.jpg")
-    art_url = f"/static/art/{art_file}"
-
-    return jsonify({"emotion": emotion, "art_url": art_url})
-
-
-# ---------- RUN SERVER ----------
-if __name__ == "__main__":
-    os.makedirs("static/art", exist_ok=True)
-    app.run(debug=True)
+      const img = document.getElementById("art");
+      img.src = data.art_url;
+      img.style.display = "block";
+    }
+  </script>
+</body>
+</html>

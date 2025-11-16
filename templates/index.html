@@ -1,132 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Emotion-Based Art Generator</title>
-  <style>
-    body {
-      background-color: #f4f4f9;
-      font-family: "Poppins", sans-serif;
-      text-align: center;
-      margin-top: 60px;
-    }
-    h1 {
-      color: #444;
-      font-size: 28px;
-    }
-    #input-container {
-      margin-top: 40px;
-    }
-    input {
-      padding: 12px;
-      width: 300px;
-      border: 2px solid #888;
-      border-radius: 10px;
-      font-size: 16px;
-      outline: none;
-    }
-    button {
-      padding: 12px 16px;
-      border: none;
-      background-color: #0078ff;
-      color: white;
-      border-radius: 10px;
-      font-size: 16px;
-      margin-left: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #005fcc;
-    }
-    #art-container {
-      margin-top: 50px;
-    }
-    img {
-      width: 350px;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    #emotion-label {
-      margin-top: 20px;
-      font-size: 22px;
-      color: #333;
-      font-weight: 600;
-    }
-  </style>
-</head>
+from flask import Flask, request, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from transformers import pipeline
+import os
+from dotenv import load_dotenv
 
-<body>
-  <h1>🎨 Emotion-Based Art Generator</h1>
+load_dotenv()
 
-  <div id="input-container">
-    <input type="text" id="userInput" placeholder="Type or speak your emotion..." />
-    <button onclick="startListening()">🎤 Speak</button>
-    <button onclick="analyzeText()">Generate Art</button>
-  </div>
+app = Flask(__name__)
 
-  <div id="art-container">
-    <p id="emotion-label"></p>
-    <img id="art-image" src="" alt="" style="display: none;" />
-  </div>
+# ---------- DATABASE ----------
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "supersecretkey")
 
-  <script>
-    // 🎙️ Voice input (Speech Recognition)
-    function startListening() {
-      if (!('webkitSpeechRecognition' in window)) {
-        alert("Sorry, your browser doesn't support voice input.");
-        return;
-      }
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.interimResults = false;
-      recognition.start();
+# ---------- USER MODEL ----------
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
 
-      recognition.onresult = function (event) {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById("userInput").value = transcript;
-        analyzeText(); // auto-analyze after speaking
-      };
+with app.app_context():
+    db.create_all()
 
-      recognition.onerror = function (event) {
-        console.error(event.error);
-        alert("Voice input error: " + event.error);
-      };
-    }
+# ---------- AUTH ROUTES ----------
+@app.route("/signup", methods=["POST"])
+def signup():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
 
-    // 🧠 Send text to Flask backend
-    async function analyzeText() {
-      const text = document.getElementById("userInput").value.trim();
-      if (!text) {
-        alert("Please type or speak something first!");
-        return;
-      }
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already exists"}), 409
 
-      try {
-        const response = await fetch("/analyze_text", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-        });
+    hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
+    user = User(email=email, password=hashed_pw)
+    db.session.add(user)
+    db.session.commit()
 
-        const data = await response.json();
+    return jsonify({"message": "Account created successfully"})
 
-        if (data.error) {
-          alert("Error: " + data.error);
-          return;
-        }
 
-        document.getElementById("emotion-label").innerText =
-          "Detected Emotion: " + data.emotion.toUpperCase();
-        const img = document.getElementById("art-image");
-        img.src = data.art_url;
-        img.style.display = "block";
-      } catch (error) {
-        console.error(error);
-        alert("Something went wrong. Check your Flask server.");
-      }
-    }
-  </script>
-</body>
-</html>
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user or not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    token = create_access_token(identity=user.id)
+
+    return jsonify({"token": token, "message": "Login successful"})
+
+
+# ---------- EMOTION DETECTION ----------
+emotion_model = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base")
+emotion_art = {
+    "happy": "happy.jpg",
+    "sadness": "sad.jpg",
+    "anger": "angry.jpg",
+    "fear": "fear.jpg",
+    "love": "love.jpg",
+    "surprise": "surprise.jpg",
+    "disgust": "disgust.jpg",
+    "neutral": "calm.jpg"
+}
+
+@app.route("/analyze_text", methods=["POST"])
+@jwt_required()    # 🔒 Protected Route
+def analyze_text():
+    data = request.json
+    text = data.get("text", "")
+
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    result = emotion_model(text)[0]
+    emotion = result["label"].lower()
+
+    art_file = emotion_art.get(emotion, "calm.jpg")
+    art_url = f"/static/art/{art_file}"
+
+    return jsonify({"emotion": emotion, "art_url": art_url})
+
+
+# ---------- RUN SERVER ----------
+if __name__ == "__main__":
+    os.makedirs("static/art", exist_ok=True)
+    app.run(debug=True)

@@ -1,132 +1,250 @@
-# 🎨 Emotion-Based Art Generator
+📌 Emotion-Based Art Generator – Backend
+This is the backend API for the Emotion-Based Art Generator project.
+It provides:
 
-This project is a **Emotion based art generator Web App** that analyzes user input (text or voice) and displays an artwork corresponding to the detected emotion.  
-It uses a **Transformer-based NLP model** (`j-hartmann/emotion-english-distilroberta-base`) for emotion recognition.
+User Signup
 
----
+User Login
 
-## 🌈 Features
-- 🎤 **Voice Input** and ✍️ **Text Input** support  
-- 🧠 Detects emotions using a fine-tuned transformer model  
-- 🖼 Displays corresponding emotion-based art images  
-- 🌐 Ready to connect with a separate frontend (React / HTML)  
-- ☁️ Fully deployable on **Render**
+JWT Authentication
 
-## 🧩 Tech Stack
-- **Backend:** Flask (Python)
-- **Model:** Hugging Face Transformers
-- **Frontend Template:** HTML + JavaScript (for text & voice input)
-- **Deployment:** Render (Free Plan)
-- **Language:** Python 3.12
+Emotion Detection using a HuggingFace model
 
-## 🧠 Emotion Categories
-| Emotion | Artwork File |
-|----------|---------------|
-| Happy | `happy.png` |
-| Sad | `sad.png` |
-| Angry | `angry.png` |
-| Fear | `fear.png` |
-| Love | `love.png` |
-| Surprise | `surprise.png` |
-| Disgust | `disgust.png` |
-| Calm / Neutral | `calm.png` |
+Returns AI-mapped artwork based on emotion
 
-## ⚙️ Setup Instructions (for Developers)
+The frontend team can call these APIs to authenticate users and generate emotion-based art.
 
-### 1️⃣ Clone this Repository
-```bash
-git clone https://github.com/<your-username>/emotion-art-backend.git
-cd emotion-art-backend
-Install Dependencies
+🚀 Tech Stack
+Python
+
+Flask
+
+SQLite
+
+JWT Authentication
+
+Transformers (HuggingFace)
+
+📁 Project Structure
+cpp
+Copy code
+emotion-based-art-generator/
+│── app.py
+│── requirements.txt
+│── static/
+│     └── art/
+│          ├── happy.jpg
+│          ├── sad.jpg
+│          ├── angry.jpg
+│          ├── calm.jpg
+│          └── ...etc
+⚙️ Installation
+1️⃣ Create a virtual environment (optional):
+nginx
+Copy code
+python -m venv venv
+venv\Scripts\activate
+2️⃣ Install dependencies:
+nginx
+Copy code
 pip install -r requirements.txt
-
-3️⃣ Run the Flask App
+3️⃣ Run the server:
+nginx
+Copy code
 python app.py
+Backend will start at:
 
+cpp
+Copy code
+http://127.0.0.1:5000
+🔐 Authentication Flow
+User signs up → /signup
 
-Then open http://localhost:5000
- in your browser 🎨
+User logs in → /login
 
-☁️ Deployment on Render
+Backend returns a JWT token
 
-Go to https://render.com
+Frontend stores token and uses it in:
 
-Click New + → Web Service
-
-Connect this GitHub repository
-
-In Build Command, leave it blank
-
-In Start Command, enter:
-
-python app.py
-
-
-Select Free Plan → Deploy 🚀
-
-After deployment, you’ll get a live URL like:
-
-https://emotion-art-backend.onrender.com
-
-
-Use this URL in your frontend to call the API:
-
-POST /analyze_text
-
-
-Example request:
-
-fetch("https://emotion-art-backend.onrender.com/analyze_text", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ text: "I feel wonderful today!" })
-})
-
-📂 Project Structure
-emotionbasedartgenerator/
-│
-├── app.py
-├── requirements.txt
-├── runtime.txt
-├── templates/
-│   └── index.html
-└── static/
-    └── art/
-        ├── happy.png
-        ├── sad.png
-        ├── angry.png
-        ├── fear.png
-        ├── love.png
-        ├── surprise.png
-        ├── disgust.png
-        └── calm.png
-
-🧠 API Endpoint
-POST /analyze_text
-
-Request Body:
-
+makefile
+Copy code
+Authorization: Bearer <token>
+📌 Available APIs
+1. Signup
+POST /signup
+Request Body
+json
+Copy code
 {
-  "text": "I am feeling joyful today!"
+  "email": "test@gmail.com",
+  "password": "123456"
 }
-
-
-Response:
-
+Success Response
+json
+Copy code
 {
-  "emotion": "joy",
-  "art_url": "/static/art/happy.png"
+  "message": "Account created successfully"
 }
+Error Response
+json
+Copy code
+{
+  "error": "Email already exists"
+}
+2. Login
+POST /login
+Request Body
+json
+Copy code
+{
+  "email": "test@gmail.com",
+  "password": "123456"
+}
+Success Response
+json
+Copy code
+{
+  "token": "JWT_TOKEN_HERE",
+  "message": "Login successful"
+}
+Error Response
+json
+Copy code
+{
+  "error": "Invalid email or password"
+}
+3. Analyze Emotion (Protected Route)
+POST /analyze_text
+Headers Required
+pgsql
+Copy code
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+Request Body
+json
+Copy code
+{
+  "text": "I feel very happy today"
+}
+Success Response
+json
+Copy code
+{
+  "emotion": "happy",
+  "art_url": "/static/art/happy.jpg"
+}
+Error Response
+json
+Copy code
+{
+  "error": "No text provided"
+}
+🧪 Testing with Postman
+Import this collection JSON
+Copy this and save as EmotionArt.postman_collection.json, then import into Postman.
 
-💡 Notes
+✅ 2. POSTMAN COLLECTION JSON
+json
+Copy code
+{
+  "info": {
+    "name": "Emotion Art API",
+    "_postman_id": "f48f5fe1-b2df-4f5d-a37a-123abcd987ef",
+    "description": "Postman collection for Emotion-Based Art Generator backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Signup",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"password\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/signup",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["signup"]
+        }
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"password\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/login",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["login"]
+        }
+      }
+    },
+    {
+      "name": "Analyze Text (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"text\": \"I feel so happy today\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:5000/analyze_text",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "5000",
+          "path": ["analyze_text"]
+        }
+      }
+    }
+  ]
+}
+🎯 3. How to Use the Postman Collection
+Step 1 → Import JSON file
+Click:
+Postman → Import → File → select JSON
 
-Make sure torch and transformers are installed properly (Render may take 3–4 mins to build).
+Step 2 → Signup a test user
+Run the Signup request.
 
-Use flask-cors to allow frontend API access.
+Step 3 → Login
+Run Login → copy the "token" from response.
 
-The app automatically loads and caches the transformer model for faster responses.
+Step 4 → Set Token in Collection Variable
+In Postman:
 
-👩‍🎨 Author
-
-Developed by Siri Chandana ✨
-GitHub Profile
+bash
+Copy code
+Variables → token → paste it
+Step 5 → Run Analyze API
+Now it will work.

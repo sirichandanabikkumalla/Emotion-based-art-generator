@@ -3,10 +3,10 @@ flask-cors
 transformers
 torch
 speechrecognition
-pyaudio
 numpy
 scipy
 flask_sqlalchemy
 flask_bcrypt
 flask_jwt_extended
 python-dotenv
+

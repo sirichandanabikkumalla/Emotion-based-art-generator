@@ -1,122 +1,114 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Emotion-Based Art Generator</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Emotion Art Generator</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.15);
-      width: 400px;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 26px;
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    input {
-      width: 90%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #aaa;
-      margin-bottom: 10px;
-    }
-
-    button {
-      padding: 12px 20px;
-      background: #0078ff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      margin-top: 10px;
-    }
-
-    button:hover {
-      background: #005fcc;
-    }
-
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      color: #444;
-      font-weight: bold;
-    }
-
-    #art {
-      margin-top: 20px;
-      display: none;
-      width: 280px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <h1>Emotion Art Generator 🎨</h1>
-
-    <input id="textInput" type="text" placeholder="Type something..." />
-
-    <button onclick="analyze()">Analyze Emotion</button>
-
-    <div id="result"></div>
-    <img id="art" src="" alt="Generated Art" />
-  </div>
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <script>
-    async function analyze() {
-      const text = document.getElementById("textInput").value;
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        alert("You must login first. No token found.");
-        return;
+    tailwind.config = {
+      theme: {
+        extend: {
+          keyframes: {
+            float: {
+              "0%,100%": { transform: "translateY(0)" },
+              "50%": { transform: "translateY(-10px)" }
+            },
+            pop: {
+              "0%": { opacity: 0, transform: "scale(.9)" },
+              "100%": { opacity: 1, transform: "scale(1)" }
+            }
+          },
+          animation: {
+            float: "float 3s ease-in-out infinite",
+            pop: "pop .4s ease-out forwards"
+          }
+        }
       }
-
-      const response = await fetch("/analyze_text", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify({ text })
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        document.getElementById("result").innerText = data.error;
-        return;
-      }
-
-      document.getElementById("result").innerText =
-        "Detected Emotion: " + data.emotion.toUpperCase();
-
-      const img = document.getElementById("art");
-      img.src = data.art_url;
-      img.style.display = "block";
-    }
+    };
   </script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white antialiased">
+
+  <!-- NAVBAR -->
+  <nav class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl bg-indigo-500 flex items-center justify-center font-bold animate-float">
+        EA
+      </div>
+      <div>
+        <div class="font-semibold text-lg">Emotion Art</div>
+        <div class="text-xs text-slate-300">From feeling → to image</div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <a href="/auth.html" class="text-sm text-slate-200 hover:text-white transition">Login</a>
+      <a href="/chat.html" 
+         class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm transition shadow-md">
+        Start Creating
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN SECTION -->
+  <main class="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center gap-12">
+    
+    <!-- LEFT CONTENT -->
+    <section class="flex-1 animate-pop">
+      <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-5">
+        Turn your emotions into <span class="text-indigo-400">art</span>
+      </h1>
+
+      <p class="text-slate-300 mb-8 max-w-xl leading-relaxed">
+        Type a phrase, let the AI detect the underlying emotion, and instantly
+        view artwork that reflects your mood.  
+        Login to save results or try the demo anytime.
+      </p>
+
+      <div class="flex gap-4">
+        <a href="/auth.html" 
+           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition">
+          <span class="text-sm">Login / Signup</span>
+        </a>
+
+        <a href="/chat.html" 
+           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition shadow-lg">
+          <span class="text-sm">Try Demo Chat</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- RIGHT PREVIEW -->
+    <aside 
+      class="w-full md:w-96 p-6 rounded-2xl bg-gradient-to-br from-indigo-800/30 to-slate-900/30 
+             border border-slate-700 animate-pop shadow-xl">
+      
+      <div class="text-sm text-slate-300 mb-2">Preview</div>
+
+      <div 
+        class="h-56 bg-gradient-to-br from-indigo-700 to-pink-500 rounded-lg flex items-center justify-center 
+               overflow-hidden shadow-2xl">
+        
+        <div class="text-center px-4">
+          <div class="text-2xl font-bold">Emotion → Art</div>
+          <div class="mt-2 text-sm opacity-90">
+            Try the chat to analyze text and view the resulting artwork.
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="max-w-6xl mx-auto px-6 py-6 text-center text-slate-400 text-sm">
+    © 2025 Emotion Art Generator
+  </footer>
+
 </body>
 </html>

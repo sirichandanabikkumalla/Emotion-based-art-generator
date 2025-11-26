@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login — Emotion Art</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-900 text-white flex items-center justify-center px-4">
+
+  <div class="w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
+    
+    <h1 class="text-3xl font-bold text-center mb-6">Welcome Back</h1>
+    <p class="text-center text-slate-400 mb-6">Login or create an account to continue</p>
+
+    <!-- Toggle Buttons -->
+    <div class="flex mb-6 rounded-xl overflow-hidden border border-slate-600">
+      <button id="loginTab" class="flex-1 py-2 bg-indigo-600">Login</button>
+      <button id="signupTab" class="flex-1 py-2 bg-slate-700">Signup</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" class="space-y-4">
+      <input id="loginEmail" type="email" placeholder="Email"
+             class="w-full p-3 bg-slate-700 rounded-xl border border-slate-600">
+
+      <input id="loginPass" type="password" placeholder="Password"
+             class="w-full p-3 bg-slate-700 rounded-xl border border-slate-600">
+
+      <button type="submit" class="w-full py-3 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition">
+        Login
+      </button>
+
+      <p id="loginError" class="text-red-400 text-sm text-center"></p>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="signupForm" class="space-y-4 hidden">
+      <input id="signupEmail" type="email" placeholder="Email"
+             class="w-full p-3 bg-slate-700 rounded-xl border border-slate-600">
+
+      <input id="signupPass" type="password" placeholder="Password"
+             class="w-full p-3 bg-slate-700 rounded-xl border border-slate-600">
+
+      <button type="submit" class="w-full py-3 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition">
+        Create Account
+      </button>
+
+      <p id="signupError" class="text-red-400 text-sm text-center"></p>
+    </form>
+
+  </div>
+
+
+<script>
+  const loginTab = document.getElementById("loginTab");
+  const signupTab = document.getElementById("signupTab");
+
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+
+  // Switch to Login
+  loginTab.onclick = () => {
+    loginTab.classList.add("bg-indigo-600");
+    signupTab.classList.remove("bg-indigo-600");
+    signupTab.classList.add("bg-slate-700");
+
+    loginForm.classList.remove("hidden");
+    signupForm.classList.add("hidden");
+  };
+
+  // Switch to Signup
+  signupTab.onclick = () => {
+    signupTab.classList.add("bg-indigo-600");
+    loginTab.classList.remove("bg-indigo-600");
+    loginTab.classList.add("bg-slate-700");
+
+    signupForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+  };
+
+
+  // LOGIN — WORKING WITH BACKEND
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = loginEmail.value.trim();
+    const password = loginPass.value.trim();
+    const error = document.getElementById("loginError");
+
+    const res = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      error.textContent = data.error;
+    } else {
+      // Save JWT token
+    localStorage.setItem("token", String(data.token).replace(/^'+|'+$/g, ""));
+
+
+      window.location.href = "/chat.html";
+    }
+  });
+
+
+  // SIGNUP — WORKING WITH BACKEND
+  signupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = signupEmail.value.trim();
+    const password = signupPass.value.trim();
+    const error = document.getElementById("signupError");
+
+    const res = await fetch("/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      error.textContent = data.error;
+    } else {
+      alert("Account created successfully! Please login.");
+      loginTab.click(); // switch to login
+    }
+  });
+
+</script>
+
+</body>
+</html>

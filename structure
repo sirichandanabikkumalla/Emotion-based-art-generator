@@ -5,6 +5,8 @@ emotionbasedartgenerator/
 ├── runtime.txt
 ├── templates/
 │   └── index.html
+    └── auth.html
+    └── chat.html
 └── static/
     └── art/
         ├── happy.png
